@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FaPaperPlane, FaPlus, FaRobot } from "react-icons/fa";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 
@@ -48,7 +47,7 @@ export default function ChatAssistant() {
 
   useEffect(scrollToBottom, [messages]);
 
-  const handleSend = async () => {
+  const handleSend = () => {
     if (!message.trim() || isStreaming) return;
 
     const userMsg: Message = {
@@ -64,6 +63,7 @@ export default function ChatAssistant() {
     setMessage("");
     setIsStreaming(true);
 
+    // Add typing indicator
     const typingIndicator: Message = {
       sender: "ai",
       content: "...",
@@ -71,52 +71,40 @@ export default function ChatAssistant() {
     };
     setMessages((prev) => [...prev, typingIndicator]);
 
-    try {
-      const genAI = new GoogleGenerativeAI(
-        process.env.NEXT_PUBLIC_GOOGLE_API_KEY || ""
-      );
+    const source = new EventSource(
+      `/api/generate?prompt=${encodeURIComponent(
+        message
+      )}&history=${encodeURIComponent(JSON.stringify(history))}`
+    );
 
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    let collectedData: string[] = [];
 
-      const chat = model.startChat({
-        history: history.map((msg) => ({
-          role: msg.sender === "user" ? "user" : "model",
-          parts: [{ text: msg.content }],
-        })),
-      });
-
-      const stream = await chat.sendMessageStream(
-        `Give me response in simple english->${message.trim()}`
-      );
-      let responseText = "";
-
-      for await (const chunk of stream.stream) {
-        const chunkText = chunk.text();
-        if (chunkText) {
-          responseText += chunkText;
-          updateLastMessage(responseText);
-        }
+    source.onmessage = (event) => {
+      if (event.data === "Stream started") return;
+      if (event.data.trim()) {
+        collectedData.push(event.data);
+        updateLastMessage(collectedData.join(""));
       }
+    };
 
-      finalizeLastMessage(responseText);
-      setHistory((prev) => [
-        ...prev,
-        userMsg,
-        {
-          sender: "ai",
-          content: responseText,
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        },
-      ]);
-    } catch (error) {
-      console.error("Error during AI response:", error);
-      finalizeLastMessage("[Error generating response]");
-    } finally {
-      setIsStreaming(false);
-    }
+    source.addEventListener("complete", (event) => {
+      updateLastMessage(event.data);
+    });
+
+    source.addEventListener("end", (event) => {
+      try {
+        setHistory(JSON.parse(event.data));
+      } catch {
+        // fail silently
+      }
+      finalizeLastMessage(collectedData.join(""));
+      source.close();
+    });
+
+    source.onerror = () => {
+      finalizeLastMessage(collectedData.join("") || "[Error occurred]");
+      source.close();
+    };
   };
 
   const updateLastMessage = (text: string) => {
