@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FaPaperPlane, FaPlus, FaRobot } from "react-icons/fa";
+import { FaPaperPlane } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 
@@ -16,7 +16,10 @@ export default function ChatAssistant() {
     {
       sender: "ai",
       content: "Hello! I'm your AI assistant. How can I help you today?",
-      timestamp: "", // don't generate time here
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     },
   ]);
   const [message, setMessage] = useState("");
@@ -24,28 +27,9 @@ export default function ChatAssistant() {
   const [history, setHistory] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Add timestamp on client after mount
   useEffect(() => {
-    setMessages((prev) =>
-      prev.map((msg, idx) =>
-        idx === 0 && msg.timestamp === ""
-          ? {
-              ...msg,
-              timestamp: new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-            }
-          : msg
-      )
-    );
-  }, []);
-
-  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(scrollToBottom, [messages]);
+  }, [messages]);
 
   const handleSend = () => {
     if (!message.trim() || isStreaming) return;
@@ -63,7 +47,6 @@ export default function ChatAssistant() {
     setMessage("");
     setIsStreaming(true);
 
-    // Add typing indicator
     const typingIndicator: Message = {
       sender: "ai",
       content: "...",
@@ -94,9 +77,7 @@ export default function ChatAssistant() {
     source.addEventListener("end", (event) => {
       try {
         setHistory(JSON.parse(event.data));
-      } catch {
-        // fail silently
-      }
+      } catch {}
       finalizeLastMessage(collectedData.join(""));
       source.close();
     });
@@ -140,97 +121,102 @@ export default function ChatAssistant() {
     }
   };
 
-  const startNewChat = () => {
-    setMessages([
-      {
-        sender: "ai",
-        content: "Hello! I'm your AI assistant. How can I help you today?",
-        timestamp: "", // don't include timestamp initially
-      },
-    ]);
-    setHistory([]);
-    setMessage("");
-  };
-
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div className="w-72 bg-[#1a1a2e] text-white p-5 flex flex-col">
-        <div className="flex items-center mb-6 border-b border-white/20 pb-4">
-          <div className="bg-white text-[#4361ee] rounded-full w-10 h-10 flex items-center justify-center text-xl">
-            <FaRobot />
-          </div>
-          <h1 className="text-lg font-semibold ml-3">AI Assistant</h1>
-        </div>
-        <button
-          onClick={startNewChat}
-          className="bg-[#4361ee] hover:bg-[#4895ef] transition-all rounded-md px-4 py-2 flex items-center justify-center space-x-2 text-white font-medium"
-        >
-          <FaPlus />
-          <span>New Chat</span>
-        </button>
-      </div>
-
-      {/* Chat area */}
-      <div className="flex flex-col flex-1 bg-white">
-        <div className="border-b px-6 py-4 text-lg font-semibold text-gray-700 bg-white">
+    <div
+      className="h-screen w-screen bg-cover bg-center bg-no-repeat flex items-center justify-center px-4"
+      style={{
+        backgroundImage: `url('https://unsplash.com/photos/JgOeRuGD_Y4/download?ixid=M3wxMjA3fDB8MXxhbGx8fHx8fHx8fHwxNzQ2MzU3NTA4fA&force=true')`,
+      }}
+    >
+      <div className="w-full max-w-3xl h-[85vh] bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="text-center text-white font-semibold py-4 border-b border-white/10 text-lg">
           AI Assistant
         </div>
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
+
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={`flex flex-col ${
-                msg.sender === "user" ? "items-end" : "items-start"
+              className={`flex ${
+                msg.sender === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div
-                className={`px-4 py-2 rounded-lg shadow-sm max-w-[80%] whitespace-pre-wrap ${
-                  msg.sender === "user"
-                    ? "bg-blue-100 text-gray-800 rounded-br-sm"
-                    : "bg-white text-gray-800 rounded-bl-sm"
-                }`}
-              >
-                <ReactMarkdown
-                  rehypePlugins={[rehypeSanitize]}
-                  children={msg.content}
-                  components={{
-                    a: ({ node, ...props }) => (
-                      <a {...props} className="text-blue-500 underline" />
-                    ),
-                  }}
-                />
+              <div className="flex flex-col items-end max-w-[80%]">
+                <div
+                  className={`px-4 py-2 rounded-2xl text-sm break-words shadow-sm ${
+                    msg.sender === "user"
+                      ? "bg-blue-500/40 text-white rounded-br-md"
+                      : "bg-white/30 text-white rounded-bl-md"
+                  }`}
+                >
+                  <ReactMarkdown
+                    rehypePlugins={[rehypeSanitize]}
+                    components={{
+                      a: ({ node, ...props }) => (
+                        <a {...props} className="text-blue-200 underline" />
+                      ),
+                      code({ children, ...props }: any) {
+                        const codeContent = String(children).trim();
+                        const isInline = !/\n/.test(codeContent);
+                        return isInline ? (
+                          <code className="bg-black/30 px-1 rounded text-white text-sm">
+                            {codeContent}
+                          </code>
+                        ) : (
+                          <div className="flex flex-col">
+                            <div className="overflow-x-auto bg-black/30 rounded my-2 text-white text-xs">
+                              <div className="w-full border-b border-white/20 pb-1 text-white/60 text-[11px] p-2">
+                                Code
+                              </div>
+                              <pre className="whitespace-pre p-2">
+                                <code {...props}>{codeContent}</code>
+                              </pre>
+                            </div>
+                          </div>
+                        );
+                      },
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
+                {msg.timestamp && (
+                  <span className="text-[11px] mt-1 text-white/60">
+                    {msg.timestamp}
+                  </span>
+                )}
               </div>
-              {msg.timestamp && (
-                <span className="text-xs text-gray-500 mt-1">
-                  {msg.timestamp}
-                </span>
-              )}
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
-        <div className="border-t p-4 bg-white flex">
-          <textarea
-            className="flex-1 resize-none border rounded-full px-4 py-3 outline-none focus:ring-2 focus:ring-[#4361ee] transition-all text-sm text-gray-600"
-            placeholder="Type your message..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={1}
-            style={{ maxHeight: 120 }}
-          />
-          <button
-            className={`ml-3 w-12 h-12 flex items-center justify-center rounded-full transition-all ${
-              isStreaming
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-[#4361ee] hover:bg-[#4895ef]"
-            } text-white`}
-            onClick={handleSend}
-            disabled={isStreaming}
-          >
-            <FaPaperPlane />
-          </button>
+
+        {/* Input Area */}
+        <div className="p-4 border-t border-white/10 bg-white/10 backdrop-blur-md">
+          <div className="flex items-end gap-3">
+            <textarea
+              className="flex-1 resize-none rounded-xl px-4 py-3 text-sm bg-white/20 text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all"
+              placeholder="Type your message..."
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              style={{ maxHeight: 120 }}
+            />
+            <button
+              className={`w-12 h-12 flex items-center justify-center rounded-full text-white transition-all ${
+                isStreaming
+                  ? "bg-white/30 cursor-not-allowed"
+                  : "bg-white/40 hover:bg-white/50"
+              }`}
+              onClick={handleSend}
+              disabled={isStreaming}
+            >
+              <FaPaperPlane />
+            </button>
+          </div>
         </div>
       </div>
     </div>
