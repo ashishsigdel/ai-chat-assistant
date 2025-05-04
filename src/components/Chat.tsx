@@ -128,7 +128,7 @@ export default function ChatAssistant() {
         backgroundImage: `url('https://unsplash.com/photos/JgOeRuGD_Y4/download?ixid=M3wxMjA3fDB8MXxhbGx8fHx8fHx8fHwxNzQ2MzU3NTA4fA&force=true')`,
       }}
     >
-      <div className="w-full max-w-3xl h-[85vh] bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 flex flex-col overflow-hidden">
+      <div className="w-full max-w-5xl h-[95vh] bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="text-center text-white font-semibold py-4 border-b border-white/10 text-lg">
           AI Assistant
@@ -143,9 +143,9 @@ export default function ChatAssistant() {
                 msg.sender === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <div className="flex flex-col items-end max-w-[80%]">
+              <div className="flex flex-col max-w-[90%]">
                 <div
-                  className={`px-4 py-2 rounded-2xl text-sm break-words shadow-sm ${
+                  className={`px-4 py-2 rounded-2xl text-sm break-words max-w-full shadow-sm ${
                     msg.sender === "user"
                       ? "bg-blue-500/40 text-white rounded-br-md"
                       : "bg-white/30 text-white rounded-bl-md"
@@ -166,11 +166,11 @@ export default function ChatAssistant() {
                           </code>
                         ) : (
                           <div className="flex flex-col">
-                            <div className="overflow-x-auto bg-black/30 rounded my-2 text-white text-xs">
+                            <div className="bg-black/30 rounded my-2 text-white text-xs max-w-full overflow-x-auto">
                               <div className="w-full border-b border-white/20 pb-1 text-white/60 text-[11px] p-2">
                                 Code
                               </div>
-                              <pre className="whitespace-pre p-2">
+                              <pre className="whitespace-pre p-2 overflow-x-auto">
                                 <code {...props}>{codeContent}</code>
                               </pre>
                             </div>
