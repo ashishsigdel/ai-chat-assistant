@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FaPaperPlane } from "react-icons/fa";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
+import MarkupRenderer from "@ashish-ui/markup-renderer";
 
 type Message = {
   sender: "user" | "ai";
@@ -122,13 +121,8 @@ export default function ChatAssistant() {
   };
 
   return (
-    <div
-      className="h-screen w-screen bg-cover bg-center bg-no-repeat flex items-center justify-center px-4"
-      style={{
-        backgroundImage: `url('https://unsplash.com/photos/JgOeRuGD_Y4/download?ixid=M3wxMjA3fDB8MXxhbGx8fHx8fHx8fHwxNzQ2MzU3NTA4fA&force=true')`,
-      }}
-    >
-      <div className="w-full max-w-5xl h-[95vh] bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 flex flex-col overflow-hidden">
+    <div className="h-screen w-screen bg-gray-950 bg-center bg-no-repeat flex items-center justify-center px-4">
+      <div className="w-full max-w-5xl h-[95vh] backdrop-blur-lg rounded-2xl shadow-2xl border border-white/20 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="text-center text-white font-semibold py-4 border-b border-white/10 text-lg">
           AI Assistant
@@ -151,36 +145,11 @@ export default function ChatAssistant() {
                       : "bg-white/30 text-white rounded-bl-md"
                   }`}
                 >
-                  <ReactMarkdown
-                    rehypePlugins={[rehypeSanitize]}
-                    components={{
-                      a: ({ node, ...props }) => (
-                        <a {...props} className="text-blue-200 underline" />
-                      ),
-                      code({ children, ...props }: any) {
-                        const codeContent = String(children).trim();
-                        const isInline = !/\n/.test(codeContent);
-                        return isInline ? (
-                          <code className="bg-black/30 px-1 rounded text-white text-sm">
-                            {codeContent}
-                          </code>
-                        ) : (
-                          <div className="flex flex-col">
-                            <div className="bg-black/30 rounded my-2 text-white text-xs max-w-full overflow-x-auto">
-                              <div className="w-full border-b border-white/20 pb-1 text-white/60 text-[11px] p-2">
-                                Code
-                              </div>
-                              <pre className="whitespace-pre p-2 overflow-x-auto">
-                                <code {...props}>{codeContent}</code>
-                              </pre>
-                            </div>
-                          </div>
-                        );
-                      },
-                    }}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
+                  <MarkupRenderer
+                    content={msg.content}
+                    isDark
+                    noMarginInParagraphs
+                  />
                 </div>
                 {msg.timestamp && (
                   <span className="text-[11px] mt-1 text-white/60">

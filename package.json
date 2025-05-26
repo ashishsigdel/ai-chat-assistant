@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ashish-ui/markup-renderer": "^1.0.9",
     "@google/generative-ai": "^0.24.1",
     "dompurify": "^3.2.5",
     "next": "15.3.1",
